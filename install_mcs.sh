@@ -34,6 +34,9 @@ setup_directories(){
   sudo cp statusmcs.sh        $MC_DIR
   sudo cp minecraft-backup.sh $MC_BACKUP_DIR
 
+  # Pi als Besitzer setzen
+  sudo chown -R pi:pi $MC_DIR
+
   # Skripte ausführbar machen
   sudo chmod +x $MC_SERVER_DIR/start-minecraft.sh
   sudo chmod +x $MC_SERVER_DIR/stop-minecraft.sh
