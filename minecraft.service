@@ -6,8 +6,8 @@ User=pi
 Group=pi
 Type=forking
 WorkingDirectory=/home/pi/mcs
-ExecStart=/bin/bash /home/pi/mcs/start-minecraft.sh
-ExecStop=/bin/bash /home/pi/mcs/stop-minecraft.sh
+ExecStart=/bin/bash /home/pi/mcs/mc_server/start-minecraft.sh
+ExecStop=/bin/bash /home/pi/mcs/mc_server/stop-minecraft.sh
 Restart=on-failure
 RestartSec=30s
 
