@@ -10,7 +10,7 @@ JAVA_HOME=/home/pi/.sdkman/candidates/java/current
 MC_SERVER_DIR=/home/pi/mcs/mc_server
 
 # Setze die Heap-Größe für den Minecraft-Server
-MC_HEAP_SIZE=3G
+MC_HEAP_SIZE=1G
 
 # Setze den Namen der screen-Sitzung
 SCREEN_SESSION_NAME="minecraft_server"
