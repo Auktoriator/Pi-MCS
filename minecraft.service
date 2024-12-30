@@ -1,0 +1,15 @@
+[Unit]
+Description=Minecraft Server
+After=network.target
+[Service]
+User=pi
+Group=pi
+Type=forking
+WorkingDirectory=/home/pi/mcs
+ExecStart=/bin/bash /home/pi/mcs/start-minecraft.sh
+ExecStop=/bin/bash /home/pi/mcs/stop-minecraft.sh
+Restart=on-failure
+RestartSec=30s
+
+[Install]
+WantedBy=multi-user.target
