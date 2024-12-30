@@ -1,3 +1,6 @@
+#paperupdate.sh
+#by FO
+
 #!/bin/bash
 
 echo "Update Paper.."

@@ -1,3 +1,6 @@
+#start-minecraft.sh
+#by FO
+
 #!/bin/bash
 
 # Setze den Pfad zur Java-Installation

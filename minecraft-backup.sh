@@ -1,3 +1,6 @@
+#minecraft-backup.sh
+#by FO
+
 #!/bin/bash
 
 # Pfad zur Minecraft-Welt

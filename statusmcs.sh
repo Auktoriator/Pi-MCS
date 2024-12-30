@@ -1,3 +1,6 @@
+#statusmcs.sh
+#by FO
+
 #!/bin/bash
 
 # Überprüfe, ob der Minecraft-Server-Service läuft

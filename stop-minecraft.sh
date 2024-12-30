@@ -1,3 +1,6 @@
+#stop-minecraft.sh
+#by FO
+
 #!/bin/bash
 
 # Setze den Pfad zur screen-Installation
