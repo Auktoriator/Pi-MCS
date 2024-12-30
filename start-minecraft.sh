@@ -7,7 +7,7 @@
 JAVA_HOME=/home/pi/.sdkman/candidates/java/current
 
 # Setze den Pfad zum Minecraft-Server-Verzeichnis
-MC_SERVER_DIR=/home/pi/mcs/mcs_server
+MC_SERVER_DIR=/home/pi/mcs/mc_server
 
 # Setze die Heap-Größe für den Minecraft-Server
 MC_HEAP_SIZE=3G
