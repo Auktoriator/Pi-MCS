@@ -14,8 +14,8 @@ else
     sudo systemctl start minecraft.service
     #echo "=== Zeige die Logs des Minecraft-Server-Dienstes in Echtzeit an. Drücke Ctrl+C, um die Anzeige zu beenden. ==="
     #sudo journalctl -u minecraft.service -f
-    sleep 60
-    echo "Fertig!"
+    sleep 5
+    echo "Minecraft-Server wird gestartet."
   else
     echo "Minecraft-Server wird nicht gestartet."
   fi

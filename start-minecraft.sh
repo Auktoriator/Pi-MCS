@@ -15,6 +15,9 @@ MC_HEAP_SIZE=2G
 # Setze den Namen der screen-Sitzung
 SCREEN_SESSION_NAME="minecraft_server"
 
+# Wechsle in das Minecraft-Server-Verzeichnis
+cd $MC_SERVER_DIR || { echo "Error: Could not change to directory $MC_SERVER_DIR"; exit 1; }
+
 # Ermittle die Anzahl der verfügbaren CPU-Kerne
 CPU_CORES=$(nproc)
 
@@ -27,3 +30,6 @@ screen -S $SCREEN_SESSION_NAME -dm $JAVA_HOME/bin/java -Xms$MC_HEAP_SIZE -Xmx$MC
 # Konsolenausgabe nach dem Start des Minecraft-Servers
 echo "Minecraft server started. To attach to the screen session, run:"
 echo "screen -r $SCREEN_SESSION_NAME"
+
+echo "$(date): Starting Minecraft server..." >> /home/pi/mcs/mc_server/server.log
+
