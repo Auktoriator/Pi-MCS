@@ -3,33 +3,46 @@
 
 #!/bin/bash
 
-# Setze den Pfad zur Java-Installation
+# Pfad zur Java-Installation
 JAVA_HOME=/home/pi/.sdkman/candidates/java/current
 
-# Setze den Pfad zum Minecraft-Server-Verzeichnis
+# Pfad zum Minecraft-Server-Verzeichnis
 MC_SERVER_DIR=/home/pi/mcs/mc_server
 
-# Setze die Heap-Größe für den Minecraft-Server
+# Heap-Größe
 MC_HEAP_SIZE=2G
 
-# Setze den Namen der screen-Sitzung
+# Name der Screen-Sitzung
 SCREEN_SESSION_NAME="minecraft_server"
 
-# Wechsle in das Minecraft-Server-Verzeichnis
-cd $MC_SERVER_DIR || { echo "Error: Could not change to directory $MC_SERVER_DIR"; exit 1; }
+# PID-Datei (muss mit dem Eintrag in der .service übereinstimmen)
+PID_FILE="/home/pi/mcs/mc_server/minecraft.pid"
 
-# Ermittle die Anzahl der verfügbaren CPU-Kerne
-CPU_CORES=$(nproc)
+cd "$MC_SERVER_DIR" || {
+  echo "Error: Could not change to directory $MC_SERVER_DIR"
+  exit 1
+}
 
-# Konsolenausgabe vor dem Start des Minecraft-Servers
-echo "Starting Minecraft server in a screen session with session name: $SCREEN_SESSION_NAME"
+echo "=== Starting Minecraft server in screen session: $SCREEN_SESSION_NAME ==="
 
-# Starte den Minecraft-Server in einer screen-Sitzung
-screen -S $SCREEN_SESSION_NAME -dm $JAVA_HOME/bin/java -Xms$MC_HEAP_SIZE -Xmx$MC_HEAP_SIZE -XX:+UseG1GC -jar $MC_SERVER_DIR/paper.jar nogui
+# 1. Starte den Server (Java) in einer detach-ten Screen-Sitzung
+#    (Wichtig: & braucht man hier nicht unbedingt, screen selbst forkt bereits.)
+screen -S "$SCREEN_SESSION_NAME" -dm \
+  "$JAVA_HOME/bin/java" -Xms"$MC_HEAP_SIZE" -Xmx"$MC_HEAP_SIZE" -XX:+UseG1GC -jar "$MC_SERVER_DIR/paper.jar" nogui
 
-# Konsolenausgabe nach dem Start des Minecraft-Servers
-echo "Minecraft server started. To attach to the screen session, run:"
-echo "screen -r $SCREEN_SESSION_NAME"
+# 2. Kurze Pause, damit screen sicher gestartet ist
+sleep 2
 
-echo "$(date): Starting Minecraft server..." >> /home/pi/mcs/mc_server/server.log
+# 3. Ermittle die PID des Screen-Prozesses (nicht des Java-Prozesses!)
+SCREEN_PID=$(pgrep -f "SCREEN.*$SCREEN_SESSION_NAME")
+
+if [ -n "$SCREEN_PID" ]; then
+  echo "$SCREEN_PID" > "$PID_FILE"
+  echo "Minecraft server started with screen PID: $SCREEN_PID"
+else
+  echo "Error: Could not find screen PID!"
+  exit 1
+fi
+
+exit 0
 
