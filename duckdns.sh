@@ -1,0 +1,1 @@
+echo url="https://www.duckdns.org/update?domains=meinserver&token=TOKEN&ip=" | curl -k -o ~/duckdns.log -K -
