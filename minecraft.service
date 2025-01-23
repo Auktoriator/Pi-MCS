@@ -9,7 +9,7 @@ PIDFile=/home/pi/mcs/mc_server/minecraft.pid
 WorkingDirectory=/home/pi/mcs/mc_server
 ExecStart=/bin/bash /home/pi/mcs/mc_server/start-minecraft.sh
 ExecStop=/bin/bash /home/pi/mcs/mc_server/stop-minecraft.sh
-Restart=on-failure
+Restart=always‚
 RestartSec=30s
 
 [Install]
