@@ -30,7 +30,7 @@ Dieses Repository enthält Skripte und Anweisungen zur Einrichtung eines Minecra
     cd <repository-name>
     ```
 
-3. Führe das Installationsskript aus:
+2. Führe das Installationsskript aus:
 
     ```sh
     sudo chmod +x install_mcs.sh
@@ -67,3 +67,51 @@ Um den Minecraft-Server zu starten, führe folgendes Skript aus:
 ./startmcs.sh
 ```
 
+## Skripte
+
+- `install_mcs.sh`: Erstinstallation (Ordner, Service, Pakete, PaperMC, Cronjob).
+- `startmcs.sh`: Startet den `minecraft.service` interaktiv.
+- `stopmcs.sh`: Stoppt den `minecraft.service` interaktiv.
+- `statusmcs.sh`: Zeigt bei Bedarf den Status von `minecraft.service`.
+- `minecraft-backup.sh`: Erstellt ein Welt-Backup (für Cronjob gedacht).
+- `paperupdate.sh`: Lädt die neueste PaperMC-Version herunter.
+- `start-minecraft.sh` / `stop-minecraft.sh`: Interne Service-Skripte.
+- `log_player_activity.sh`: Loggt Join/Leave/Disconnect-Ereignisse aus `latest.log`.
+
+## Service
+
+Der Server wird als `systemd`-Dienst (`minecraft.service`) betrieben.
+
+```sh
+sudo systemctl status minecraft.service
+sudo systemctl start minecraft.service
+sudo systemctl stop minecraft.service
+sudo systemctl restart minecraft.service
+```
+
+## Backup
+
+Bei der Installation wird ein täglicher Cronjob für den User `pi` eingetragen:
+
+```cron
+0 4 * * * /bin/bash /home/pi/mcs/mcs_backup/minecraft-backup.sh
+```
+
+Der Job stoppt den Dienst (falls aktiv), erstellt ein `.tar.gz`-Backup der Welten und startet den Dienst danach wieder.
+
+## Updates
+
+Für ein PaperMC-Update:
+
+```sh
+cd /home/pi/mcs/mc_server
+./paperupdate.sh
+sudo systemctl restart minecraft.service
+```
+
+## Troubleshooting
+
+- Dienst startet nicht: `sudo journalctl -u minecraft.service -n 200 --no-pager`
+- Java fehlt: `java -version` prüfen, ggf. Java erneut installieren.
+- Screen-Konsole öffnen: `screen -r minecraft_server`
+- Port nicht erreichbar: Router-Portfreigabe + UFW-Regeln prüfen.

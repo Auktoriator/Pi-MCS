@@ -63,11 +63,12 @@ install_software(){
   sudo apt upgrade -y
   echo "==== Update fertig! ===="
 
-  # Installation von SDKMAN und Java
-  echo "==== Lade SDKMAN herunter und installiere Java... ===="
-  curl -s "https://get.sdkman.io" | bash
-  source "$HOME/.sdkman/bin/sdkman-init.sh"
-  sdk install java
+  # Installation von Java (nicht-interaktiv)
+  echo "==== Installiere Java... ===="
+  if ! sudo apt-get install -y openjdk-21-jre-headless; then
+    echo "==== openjdk-21-jre-headless nicht verfügbar, nutze default-jre-headless. ===="
+    sudo apt-get install -y default-jre-headless
+  fi
   echo "==== Java installiert! ===="
 
   # Installation von screen und jq
@@ -133,8 +134,16 @@ configure_backup(){
 echo "===== Configuring the daily backup... =====" 
 sleep 2
 
-#Tägliches Backup um 4 Uhr morgens konfigurieren
-(crontab -l 2>/dev/null; echo "0 4 * * * /bin/bash /home/pi/mcs/mcs_backup/minecraft-backup.sh") | crontab -
+#Tägliches Backup um 4 Uhr morgens konfigurieren (idempotent)
+CRON_ENTRY="0 4 * * * /bin/bash /home/pi/mcs/mcs_backup/minecraft-backup.sh"
+CURRENT_CRON=$(sudo crontab -u pi -l 2>/dev/null || true)
+
+if echo "$CURRENT_CRON" | grep -Fq "$CRON_ENTRY"; then
+  echo "==== Cronjob existiert bereits, überspringe Eintrag. ===="
+else
+  (printf "%s\n" "$CURRENT_CRON"; echo "$CRON_ENTRY") | sed '/^[[:space:]]*$/d' | sudo crontab -u pi -
+  echo "==== Cronjob wurde für User pi eingetragen. ===="
+fi
 
 echo "===== Configuring the daily backup done! The backup will be every night at 4am. ====="
 sleep 2

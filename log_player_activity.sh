@@ -10,12 +10,19 @@ if [ ! -f "$OUTPUT_LOG" ]; then
     echo "-------------------" >> "$OUTPUT_LOG"
 fi
 
+# Regex-Pattern zentral definieren (robuster für Bash-Parser)
+RE_UUID='^\[([^]]+)\] \[[^]]*\]: UUID of player ([^[:space:]]+) is ([0-9a-fA-F-]+)$'
+RE_JOIN='^\[([^]]+)\] \[[^]]*\]: ([^[:space:]]+) joined the game$'
+RE_LOST='^\[([^]]+)\] \[[^]]*\]: ([^[:space:]]+) lost connection: (.*)$'
+RE_LEFT='^\[([^]]+)\] \[[^]]*\]: ([^[:space:]]+) left the game$'
+RE_DISCONNECTING='^\[([^]]+)\] \[[^]]*\]: Disconnecting ([^[:space:]]+) \(([^)]*)\): (.*)$'
+
 # Live-Verarbeitung des Logs
-tail -F "$MINECRAFT_LOG_DIR/latest.log" | while read LINE
+tail -F "$MINECRAFT_LOG_DIR/latest.log" | while IFS= read -r LINE
 do
     # 1) UUID-Zeile z.B.:
     # [11:37:10] [User Authenticator #4/INFO]: UUID of player XXX is YYY
-    if [[ "$LINE" =~ ^\[(.*)\]\ \[[^\]]*\]:\ UUID\ of\ player\ ([^[:space:]]+)\ is\ ([0-9a-fA-F-]+)$ ]]; then
+    if [[ "$LINE" =~ $RE_UUID ]]; then
         TIME="${BASH_REMATCH[1]}"
         PLAYER="${BASH_REMATCH[2]}"
         UUID="${BASH_REMATCH[3]}"
@@ -25,7 +32,7 @@ do
 
     # 2) Spieler betritt das Spiel:
     # [11:34:20] [Server thread/INFO]: XXX joined the game
-    if [[ "$LINE" =~ ^\[(.*)\]\ \[[^\]]*\]:\ ([^[:space:]]+)\ joined\ the\ game$ ]]; then
+    if [[ "$LINE" =~ $RE_JOIN ]]; then
         TIME="${BASH_REMATCH[1]}"
         PLAYER="${BASH_REMATCH[2]}"
         echo "$(date '+%Y-%m-%d %H:%M:%S') - [$TIME] $PLAYER joined the game" >> "$OUTPUT_LOG"
@@ -34,7 +41,7 @@ do
 
     # 3) Spieler verliert Verbindung, inkl. Grund:
     # [11:34:30] [Server thread/INFO]: XXX lost connection: Disconnected
-    if [[ "$LINE" =~ ^\[(.*)\]\ \[[^\]]*\]:\ ([^[:space:]]+)\ lost\ connection:\ (.*)$ ]]; then
+    if [[ "$LINE" =~ $RE_LOST ]]; then
         TIME="${BASH_REMATCH[1]}"
         PLAYER="${BASH_REMATCH[2]}"
         REASON="${BASH_REMATCH[3]}"
@@ -44,7 +51,7 @@ do
 
     # 4) Spieler verlässt das Spiel (z. B. „left the game“):
     # [11:34:30] [Server thread/INFO]: XXX left the game
-    if [[ "$LINE" =~ ^\[(.*)\]\ \[[^\]]*\]:\ ([^[:space:]]+)\ left\ the\ game$ ]]; then
+    if [[ "$LINE" =~ $RE_LEFT ]]; then
         TIME="${BASH_REMATCH[1]}"
         PLAYER="${BASH_REMATCH[2]}"
         echo "$(date '+%Y-%m-%d %H:%M:%S') - [$TIME] $PLAYER left the game" >> "$OUTPUT_LOG"
@@ -53,7 +60,7 @@ do
 
     # 5) „Disconnecting ...“ (Whitelist-Kick, etc.)
     # [11:37:10] [Server thread/INFO]: Disconnecting XXX (/IP): Grund ...
-    if [[ "$LINE" =~ ^\[(.*)\]\ \[[^\]]*\]:\ Disconnecting\ ([^[:space:]]+)\ \(([^)]*)\):\ (.*)$ ]]; then
+    if [[ "$LINE" =~ $RE_DISCONNECTING ]]; then
         TIME="${BASH_REMATCH[1]}"
         PLAYER="${BASH_REMATCH[2]}"
         ADDRESS="${BASH_REMATCH[3]}"
