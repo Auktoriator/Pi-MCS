@@ -124,6 +124,7 @@ Dieses Repo enthält eine einfache Admin-Oberfläche mit:
 - Serverstatus, Online-Spieler, CPU/RAM/Disk/Temperatur
 - Log-Ansichten (Errors, Player Activity, Chat, Service)
 - Buttons für Start/Stop/Restart, Backup und Paper-Update
+- Chat senden und Minecraft-Commands ausführen
 - Bearbeiten von `server.properties`
 - Terminal-Kommando für eine kompakte Statusübersicht
 

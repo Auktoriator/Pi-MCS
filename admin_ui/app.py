@@ -23,6 +23,7 @@ PLAYER_ACTIVITY_LOG = os.getenv("MCS_PLAYER_ACTIVITY_LOG", "/home/pi/mcs/player_
 MINECRAFT_LOG = os.getenv("MCS_MINECRAFT_LOG", f"{MCS_SERVER_DIR}/logs/latest.log")
 SERVER_PROPERTIES = os.getenv("MCS_SERVER_PROPERTIES", f"{MCS_SERVER_DIR}/server.properties")
 ACTION_LOG = os.getenv("MCS_ACTION_LOG", "/home/pi/mcs/admin/actions.log")
+MCS_SCREEN_SESSION = os.getenv("MCS_SCREEN_SESSION", "minecraft_server")
 ADMIN_USER = os.getenv("MCS_ADMIN_USER", "admin")
 ADMIN_PASSWORD = os.getenv("MCS_ADMIN_PASSWORD", "")
 ALLOW_HOST_POWER = os.getenv("MCS_ALLOW_HOST_POWER", "0") in {"1", "true", "TRUE", "yes", "YES"}
@@ -280,6 +281,20 @@ def action_command(action_name):
     return None
 
 
+def sanitize_console_input(text):
+    cleaned = (text or "").replace("\r", " ").replace("\n", " ").strip()
+    return cleaned[:500]
+
+
+def send_to_minecraft_console(line):
+    cmd = ["screen", "-S", MCS_SCREEN_SESSION, "-p", "0", "-X", "stuff", f"{line}\r"]
+    code, out, err = run_command(cmd, timeout=5)
+    if code != 0:
+        details = err or out or "unknown error"
+        return False, f"Failed to send to screen session '{MCS_SCREEN_SESSION}': {details}"
+    return True, "sent"
+
+
 def print_summary():
     status = current_status()
     backup = status["last_backup"]
@@ -360,6 +375,32 @@ def api_server_properties_save():
     shutil.copy2(SERVER_PROPERTIES, backup_path)
     prop_path.write_text(content, encoding="utf-8")
     return jsonify({"ok": True, "backup_file": backup_path})
+
+
+@app.post("/api/console")
+@auth_required
+def api_console():
+    payload = request.get_json(silent=True) or {}
+    mode = (payload.get("mode") or "").strip().lower()
+    message = sanitize_console_input(payload.get("message"))
+
+    if mode not in {"chat", "command"}:
+        return jsonify({"error": "mode must be 'chat' or 'command'"}), 400
+    if not message:
+        return jsonify({"error": "message is empty"}), 400
+    if service_state() != "active":
+        return jsonify({"error": "minecraft service is not active"}), 409
+
+    if mode == "chat":
+        line = f"say [WEB] {message}"
+    else:
+        line = message if message.startswith("/") else f"/{message}"
+
+    ok, detail = send_to_minecraft_console(line)
+    if not ok:
+        return jsonify({"ok": False, "error": detail}), 500
+
+    return jsonify({"ok": True, "mode": mode, "sent": line})
 
 
 @app.post("/api/action/<action_name>")

@@ -144,6 +144,16 @@
       resize: vertical;
     }
 
+    input[type="text"] {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      padding: 0.6rem 0.7rem;
+      font-size: 0.95rem;
+    }
+
     ul {
       margin: 0.3rem 0 0 1rem;
     }
@@ -214,6 +224,19 @@
         Authentication is currently disabled. Set <code>MCS_ADMIN_PASSWORD</code> in <code>/home/pi/mcs/admin/.env</code>.
       </div>
       {% endif %}
+    </div>
+
+    <div class="panel" style="margin-top: 0.8rem;">
+      <h2>Minecraft Console</h2>
+      <div class="sub" style="margin-bottom: 0.5rem;">
+        Send chat messages or run commands directly on the server.
+      </div>
+      <div class="btns">
+        <input type="text" id="consoleInput" placeholder="Example: time set day or Hello from web UI">
+        <button class="action" onclick="sendChat()">Send Chat</button>
+        <button onclick="sendCommand()">Run Command</button>
+      </div>
+      <div id="consoleResult" class="sub" style="margin-top: 0.6rem;"></div>
     </div>
 
     <div class="grid-2" style="margin-top: 0.8rem;">
@@ -358,6 +381,46 @@
         document.getElementById("actionResult").textContent = "Action failed: " + err.message;
       }
     }
+
+    async function sendConsole(mode) {
+      const input = document.getElementById("consoleInput");
+      const message = (input.value || "").trim();
+      if (!message) {
+        document.getElementById("consoleResult").textContent = "Please enter text first.";
+        return;
+      }
+
+      try {
+        const data = await api("/api/console", {
+          method: "POST",
+          body: JSON.stringify({ mode, message })
+        });
+        document.getElementById("consoleResult").textContent =
+          "Sent: " + data.sent;
+        if (mode === "chat") {
+          input.value = "";
+        }
+        loadLog("latest");
+      } catch (err) {
+        document.getElementById("consoleResult").textContent =
+          "Console send failed: " + err.message;
+      }
+    }
+
+    function sendChat() {
+      sendConsole("chat");
+    }
+
+    function sendCommand() {
+      sendConsole("command");
+    }
+
+    document.getElementById("consoleInput").addEventListener("keydown", function (event) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        sendChat();
+      }
+    });
 
     refreshStatus();
     loadLog("errors");
