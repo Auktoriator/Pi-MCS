@@ -1,0 +1,16 @@
+[Unit]
+Description=Pi-MCS Admin Web UI
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/mcs/admin
+EnvironmentFile=-/home/pi/mcs/admin/.env
+ExecStart=/usr/bin/python3 /home/pi/mcs/admin/app.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

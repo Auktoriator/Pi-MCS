@@ -14,6 +14,7 @@ Dieses Repository enthält Skripte und Anweisungen zur Einrichtung eines Minecra
 - [Backup](#backup)
 - [Updates](#updates)
 - [Troubleshooting](#troubleshooting)
+- [Admin Tool (Web UI)](#admin-tool-web-ui)
 
 ## Voraussetzungen
 
@@ -115,3 +116,27 @@ sudo systemctl restart minecraft.service
 - Java fehlt: `java -version` prüfen, ggf. Java erneut installieren.
 - Screen-Konsole öffnen: `screen -r minecraft_server`
 - Port nicht erreichbar: Router-Portfreigabe + UFW-Regeln prüfen.
+
+## Admin Tool (Web UI)
+
+Dieses Repo enthält eine einfache Admin-Oberfläche mit:
+
+- Serverstatus, Online-Spieler, CPU/RAM/Disk/Temperatur
+- Log-Ansichten (Errors, Player Activity, Chat, Service)
+- Buttons für Start/Stop/Restart, Backup und Paper-Update
+- Bearbeiten von `server.properties`
+- Terminal-Kommando für eine kompakte Statusübersicht
+
+### Installation auf dem Pi
+
+```sh
+chmod +x install_admin_tool.sh
+./install_admin_tool.sh
+```
+
+Danach:
+
+1. Passwort setzen in `/home/pi/mcs/admin/.env` (`MCS_ADMIN_PASSWORD`).
+2. Admin-Service neu starten: `sudo systemctl restart mcs-admin.service`
+3. Web UI öffnen: `http://<raspberrypi-ip>:8080`
+4. Status in CLI: `mcs-admin-status`

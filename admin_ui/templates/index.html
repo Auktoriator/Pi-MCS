@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pi-MCS Admin</title>
+  <style>
+    :root {
+      --bg: #f4f7f2;
+      --panel: #ffffff;
+      --ink: #1a2b1f;
+      --muted: #4a6253;
+      --accent: #2d6a4f;
+      --danger: #8f1d1d;
+      --warn: #a15f00;
+      --border: #d7e0d8;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top right, #e6f2e8, var(--bg) 55%);
+      color: var(--ink);
+      font-family: "Segoe UI", Tahoma, sans-serif;
+    }
+
+    .wrap {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 0.8rem;
+      margin-bottom: 0.8rem;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.8rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    }
+
+    h1, h2, h3 {
+      margin: 0 0 0.6rem 0;
+    }
+
+    h1 {
+      font-size: 1.35rem;
+    }
+
+    h2 {
+      font-size: 1rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .metric {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-top: 0.25rem;
+    }
+
+    .sub {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .ok { color: var(--accent); }
+    .warn { color: var(--warn); }
+    .danger { color: var(--danger); }
+
+    .btns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    button {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--ink);
+      padding: 0.5rem 0.8rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    button:hover {
+      border-color: var(--accent);
+    }
+
+    button.action {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    button.danger {
+      background: #fff4f4;
+      color: var(--danger);
+      border-color: #f0c7c7;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+    }
+
+    @media (max-width: 900px) {
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    pre, textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fbfdfb;
+      color: #153222;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    pre {
+      min-height: 280px;
+      max-height: 420px;
+      overflow: auto;
+      padding: 0.7rem;
+      margin: 0;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    textarea {
+      min-height: 280px;
+      padding: 0.7rem;
+      resize: vertical;
+    }
+
+    ul {
+      margin: 0.3rem 0 0 1rem;
+    }
+
+    .statusline {
+      margin-bottom: 0.7rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .warning {
+      margin-top: 0.6rem;
+      padding: 0.6rem;
+      border: 1px solid #f0c7c7;
+      background: #fff4f4;
+      border-radius: 8px;
+      color: #7a1b1b;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Pi-MCS Admin Dashboard</h1>
+    <div class="statusline">Last update: <span id="lastUpdate">-</span></div>
+
+    <div class="row">
+      <div class="panel">
+        <h2>Server</h2>
+        <div id="serviceState" class="metric">-</div>
+        <div class="sub">Uptime: <span id="serviceUptime">-</span></div>
+      </div>
+      <div class="panel">
+        <h2>Players Online</h2>
+        <div id="playersCount" class="metric">0</div>
+        <ul id="playersList"></ul>
+      </div>
+      <div class="panel">
+        <h2>CPU</h2>
+        <div id="cpuUsage" class="metric">-</div>
+        <div class="sub">Temp: <span id="cpuTemp">-</span></div>
+        <div class="sub">Load avg: <span id="loadAvg">-</span></div>
+      </div>
+      <div class="panel">
+        <h2>RAM / Disk</h2>
+        <div class="sub">RAM: <span id="ramUsage">-</span></div>
+        <div class="sub">Disk: <span id="diskUsage">-</span></div>
+        <div class="sub">Last backup: <span id="lastBackup">-</span></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Quick Actions</h2>
+      <div class="btns">
+        <button class="action" onclick="runAction('start_server')">Start Server</button>
+        <button class="danger" onclick="runAction('stop_server', true)">Stop Server</button>
+        <button class="action" onclick="runAction('restart_server', true)">Restart Server</button>
+        <button onclick="runAction('backup_now')">Create Backup</button>
+        <button onclick="runAction('update_paper')">Update Paper (background)</button>
+        {% if allow_host_power %}
+        <button class="danger" onclick="runAction('reboot_host', true)">Reboot Host</button>
+        <button class="danger" onclick="runAction('shutdown_host', true)">Poweroff Host</button>
+        {% endif %}
+      </div>
+      <div id="actionResult" class="sub" style="margin-top: 0.6rem;"></div>
+      {% if not auth_enabled %}
+      <div class="warning">
+        Authentication is currently disabled. Set <code>MCS_ADMIN_PASSWORD</code> in <code>/home/pi/mcs/admin/.env</code>.
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="grid-2" style="margin-top: 0.8rem;">
+      <div class="panel">
+        <h2>Logs</h2>
+        <div class="btns" style="margin-bottom: 0.5rem;">
+          <button onclick="loadLog('errors')">Errors/Warn</button>
+          <button onclick="loadLog('activity')">Player Activity</button>
+          <button onclick="loadLog('chat')">Chat</button>
+          <button onclick="loadLog('service')">Service</button>
+          <button onclick="loadLog('latest')">latest.log</button>
+        </div>
+        <pre id="logOutput">Loading logs...</pre>
+      </div>
+
+      <div class="panel">
+        <h2>server.properties</h2>
+        <div class="btns" style="margin-bottom: 0.5rem;">
+          <button onclick="loadProperties()">Reload</button>
+          <button class="action" onclick="saveProperties()">Save</button>
+        </div>
+        <textarea id="propsText" spellcheck="false"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function api(path, options = {}) {
+      const response = await fetch(path, {
+        headers: { "Content-Type": "application/json" },
+        ...options
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || ("HTTP " + response.status));
+      }
+      const ctype = response.headers.get("content-type") || "";
+      return ctype.includes("application/json") ? response.json() : response.text();
+    }
+
+    function fmt(value, digits = 1) {
+      if (value === null || value === undefined || Number.isNaN(Number(value))) {
+        return "-";
+      }
+      return Number(value).toFixed(digits);
+    }
+
+    async function refreshStatus() {
+      try {
+        const data = await api("/api/status");
+        document.getElementById("lastUpdate").textContent = data.timestamp;
+        document.getElementById("serviceState").textContent = data.service_state;
+        document.getElementById("serviceState").className =
+          "metric " + (data.service_state === "active" ? "ok" : "danger");
+        document.getElementById("serviceUptime").textContent = data.service_uptime;
+        document.getElementById("playersCount").textContent = data.players_count;
+
+        const playersList = document.getElementById("playersList");
+        playersList.innerHTML = "";
+        if (data.players_online.length === 0) {
+          const li = document.createElement("li");
+          li.textContent = "No players online";
+          playersList.appendChild(li);
+        } else {
+          for (const name of data.players_online) {
+            const li = document.createElement("li");
+            li.textContent = name;
+            playersList.appendChild(li);
+          }
+        }
+
+        document.getElementById("cpuUsage").textContent = fmt(data.cpu_usage_percent) + " %";
+        document.getElementById("cpuTemp").textContent =
+          data.cpu_temp_c === null ? "n/a" : fmt(data.cpu_temp_c) + " C";
+        document.getElementById("loadAvg").textContent =
+          data.loadavg_1m + " / " + data.loadavg_5m + " / " + data.loadavg_15m;
+        document.getElementById("ramUsage").textContent =
+          data.mem_used_mb + " / " + data.mem_total_mb + " MB (" + data.mem_usage_percent + " %)";
+        document.getElementById("diskUsage").textContent =
+          data.disk_used_gb + " / " + data.disk_total_gb + " GB (" + data.disk_usage_percent + " %)";
+
+        if (data.last_backup && data.last_backup.exists) {
+          document.getElementById("lastBackup").textContent =
+            data.last_backup.file + " | " + data.last_backup.mtime + " | " + data.last_backup.size_mb + " MB";
+        } else {
+          document.getElementById("lastBackup").textContent = "none";
+        }
+      } catch (err) {
+        document.getElementById("actionResult").textContent = "Status refresh failed: " + err.message;
+      }
+    }
+
+    async function loadLog(logType) {
+      try {
+        const data = await api("/api/logs/" + logType);
+        const lines = data.lines || [];
+        document.getElementById("logOutput").textContent = lines.join("\n") || "(empty)";
+      } catch (err) {
+        document.getElementById("logOutput").textContent = "Failed to load logs: " + err.message;
+      }
+    }
+
+    async function loadProperties() {
+      try {
+        const data = await api("/api/server-properties");
+        document.getElementById("propsText").value = data.content || "";
+      } catch (err) {
+        document.getElementById("propsText").value = "Failed to load server.properties: " + err.message;
+      }
+    }
+
+    async function saveProperties() {
+      const content = document.getElementById("propsText").value;
+      try {
+        const data = await api("/api/server-properties", {
+          method: "POST",
+          body: JSON.stringify({ content })
+        });
+        document.getElementById("actionResult").textContent =
+          "server.properties saved. Backup: " + data.backup_file;
+      } catch (err) {
+        document.getElementById("actionResult").textContent =
+          "Failed to save server.properties: " + err.message;
+      }
+    }
+
+    async function runAction(action, confirmFirst = false) {
+      if (confirmFirst && !window.confirm("Are you sure?")) {
+        return;
+      }
+      try {
+        const data = await api("/api/action/" + action, { method: "POST" });
+        if (data.started) {
+          document.getElementById("actionResult").textContent =
+            "Action started in background: " + action + " (pid " + data.pid + ")";
+        } else {
+          document.getElementById("actionResult").textContent =
+            "Action " + action + " finished (rc=" + data.returncode + ")";
+        }
+        refreshStatus();
+      } catch (err) {
+        document.getElementById("actionResult").textContent = "Action failed: " + err.message;
+      }
+    }
+
+    refreshStatus();
+    loadLog("errors");
+    loadProperties();
+    setInterval(refreshStatus, 5000);
+  </script>
+</body>
+</html>
