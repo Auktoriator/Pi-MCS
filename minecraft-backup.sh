@@ -11,10 +11,52 @@ WORLD_PATH=/home/pi/mcs/mc_server
 BACKUP_PATH=/home/pi/mcs/mcs_backup
 
 SERVICE_NAME="minecraft.service"
-WORLD_DIRS=("MCSWorld" "MCSWorld_nether" "MCSWorld_the_end")
 DATE=$(date +"%Y-%m-%d_%H-%M-%S")
 BACKUP_FILE="$BACKUP_PATH/world_$DATE.tar.gz"
 WAS_RUNNING=false
+PATHS_TO_BACKUP=()
+
+cleanup() {
+  # Failsafe: Wenn der Dienst vor dem Backup lief, nach Fehlern wieder starten.
+  if [ "$WAS_RUNNING" = true ] && ! sudo systemctl is-active --quiet "$SERVICE_NAME"; then
+    if sudo systemctl start "$SERVICE_NAME"; then
+      echo "Failsafe: Minecraft-Dienst wurde nach Fehlerfall wieder gestartet."
+    else
+      echo "Warnung: Minecraft-Dienst konnte im Failsafe nicht gestartet werden." >&2
+    fi
+  fi
+}
+
+collect_world_dirs() {
+  local level_name="world"
+  local props_file="$WORLD_PATH/server.properties"
+
+  if [ -f "$props_file" ]; then
+    level_name="$(grep -E '^level-name=' "$props_file" | tail -n1 | cut -d= -f2-)"
+    if [ -z "$level_name" ]; then
+      level_name="world"
+    fi
+  fi
+
+  local candidates=("$level_name" "${level_name}_nether" "${level_name}_the_end")
+  for dir in "${candidates[@]}"; do
+    if [ -d "$WORLD_PATH/$dir" ]; then
+      PATHS_TO_BACKUP+=("$WORLD_PATH/$dir")
+    fi
+  done
+
+  # Fallback: Suche alle Weltordner über level.dat
+  if [ "${#PATHS_TO_BACKUP[@]}" -eq 0 ]; then
+    local d
+    for d in "$WORLD_PATH"/*; do
+      if [ -d "$d" ] && [ -f "$d/level.dat" ]; then
+        PATHS_TO_BACKUP+=("$d")
+      fi
+    done
+  fi
+}
+
+trap cleanup EXIT
 
 mkdir -p "$BACKUP_PATH"
 
@@ -38,12 +80,7 @@ if sudo systemctl is-active --quiet "$SERVICE_NAME"; then
 fi
 
 # Nur vorhandene Welten sichern
-PATHS_TO_BACKUP=()
-for dir in "${WORLD_DIRS[@]}"; do
-  if [ -d "$WORLD_PATH/$dir" ]; then
-    PATHS_TO_BACKUP+=("$WORLD_PATH/$dir")
-  fi
-done
+collect_world_dirs
 
 if [ "${#PATHS_TO_BACKUP[@]}" -eq 0 ]; then
   echo "Fehler: Keine Weltordner gefunden. Backup abgebrochen."
