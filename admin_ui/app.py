@@ -32,7 +32,10 @@ AUTH_ENABLED = bool(ADMIN_PASSWORD)
 
 JOIN_RE = re.compile(r"]:\s([A-Za-z0-9_]{1,16}) joined the game$")
 LEAVE_RE = re.compile(r"]:\s([A-Za-z0-9_]{1,16}) (left the game|lost connection: .*)$")
-CHAT_RE = re.compile(r"]:\s<([A-Za-z0-9_]{1,16})>\s(.*)$")
+UUID_RE = re.compile(r"]:\sUUID of player ([A-Za-z0-9_]{1,16}) is ([0-9a-fA-F-]+)$")
+LOGIN_RE = re.compile(r"]:\s([A-Za-z0-9_]{1,16})\[/[0-9a-fA-F\.:]+:\d+\] logged in with entity id")
+COMMAND_RE = re.compile(r"]:\s([A-Za-z0-9_]{1,16}) issued server command:\s(/.*)$")
+CHAT_RE = re.compile(r"]:\s(?:\[Not Secure\]\s)?<([^>]+)>\s(.*)$")
 ERROR_RE = re.compile(r"(ERROR|WARN|Exception|Traceback|failed|Could not)", re.IGNORECASE)
 
 
@@ -207,9 +210,33 @@ def online_players():
 
 def chat_lines(max_lines=150):
     lines = []
-    for line in read_last_lines(MINECRAFT_LOG, max_lines=800):
+    for line in read_last_lines(MINECRAFT_LOG, max_lines=4000):
         if CHAT_RE.search(line):
             lines.append(line)
+    return lines[-max_lines:]
+
+
+def activity_lines(max_lines=150):
+    lines = []
+    for line in read_last_lines(MINECRAFT_LOG, max_lines=5000):
+        if UUID_RE.search(line):
+            lines.append(line)
+            continue
+        if JOIN_RE.search(line):
+            lines.append(line)
+            continue
+        if LEAVE_RE.search(line):
+            lines.append(line)
+            continue
+        if LOGIN_RE.search(line):
+            lines.append(line)
+            continue
+        if COMMAND_RE.search(line):
+            lines.append(line)
+            continue
+        if CHAT_RE.search(line):
+            lines.append(line)
+            continue
     return lines[-max_lines:]
 
 
@@ -335,7 +362,9 @@ def api_logs(log_type):
     if log_type == "errors":
         lines = error_lines(max_lines=200)
     elif log_type == "activity":
-        lines = read_last_lines(PLAYER_ACTIVITY_LOG, max_lines=200)
+        lines = activity_lines(max_lines=300)
+        if not lines:
+            lines = read_last_lines(PLAYER_ACTIVITY_LOG, max_lines=200)
     elif log_type == "chat":
         lines = chat_lines(max_lines=200)
     elif log_type == "service":
